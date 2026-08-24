@@ -8,7 +8,8 @@ Se debe tener instalado en la computadora go
 
 2. cd Trabajo_web
 
-3. go run main.go
+3. Ejecutar el script de inicio: ./run.sh
+   Tambien se puede inicializar manualmente: go run main.go
 
 4. Abrir en un navegador: http://localhost:8080
 
