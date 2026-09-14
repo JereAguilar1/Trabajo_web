@@ -1,3 +1,5 @@
-module entrega1.com/entrega1
+module tp2
 
-go 1.22.2
+go 1.26.7
+
+require github.com/lib/pq v1.12.3
