@@ -5,9 +5,14 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"net/http"
 
 	_ "github.com/lib/pq"
 	db "tp2/db/sqlc"
+	"tp2/handlers/clientes"
+	"tp2/handlers/desarrolladores"
+	"tp2/handlers/desarrolladores_en_proyectos"
+	"tp2/handlers/proyectos"
 )
 
 func main() {
@@ -17,7 +22,7 @@ func main() {
 	}
 	port := os.Getenv("DB_PORT")
 	if port == "" {
-		port = "5432"
+		port = "5433"
 	}
 	user := os.Getenv("DB_USER")
 	if user == "" {
@@ -42,12 +47,43 @@ func main() {
 	defer database.Close()
 
 	if err := database.Ping(); err != nil {
-		fmt.Printf("No se pudo conectar a PostgreSQL en %s:%s (%v). Ejecute ./test.sh.\n", host, port, err)
-		return
+		log.Fatalf("No se pudo conectar a PostgreSQL en %s:%s (%v).", host, port, err)
 	}
 
 	fmt.Printf("Conexión establecida con PostgreSQL en %s:%s (DB: %s)\n", host, port, dbname)
 
 	queries := db.New(database)
-	_ = queries
+
+	// SERVER
+	mux := http.NewServeMux()
+	
+	//Handlers cliente
+	mux.HandleFunc("POST /clientes", clientes.Create(queries))
+	mux.HandleFunc("GET /clientes", clientes.GetAll(queries))
+	mux.HandleFunc("GET /clientes/{id}", clientes.GetByID(queries))
+	mux.HandleFunc("PUT /clientes/{id}", clientes.Update(queries))
+	mux.HandleFunc("DELETE /clientes/{id}", clientes.Delete(queries))
+
+	//Handlers desarrolladores
+	mux.HandleFunc("POST /desarrolladores", desarrolladores.Create(queries))
+	mux.HandleFunc("GET /desarrolladores", desarrolladores.GetAll(queries))
+	mux.HandleFunc("GET /desarrolladores/{id}", desarrolladores.GetByID(queries))
+	mux.HandleFunc("PUT /desarrolladores/{id}", desarrolladores.Update(queries))
+	mux.HandleFunc("DELETE /desarrolladores/{id}", desarrolladores.Delete(queries))
+
+	//Handlers proyectos
+	mux.HandleFunc("POST /proyectos", proyectos.Create(queries))
+	mux.HandleFunc("GET /proyectos", proyectos.GetAll(queries))
+	mux.HandleFunc("GET /proyectos/{id}", proyectos.GetByID(queries))
+	mux.HandleFunc("PUT /proyectos/{id}", proyectos.Update(queries))
+	mux.HandleFunc("DELETE /proyectos/{id}", proyectos.Delete(queries))
+
+	//Handlers desarrolladores_en_proyectos (relación N:M, sub-recurso de proyectos)
+	mux.HandleFunc("POST /proyectos/{id}/desarrolladores", desarrolladores_en_proyectos.Assign(queries))
+	mux.HandleFunc("GET /proyectos/{id}/desarrolladores", desarrolladores_en_proyectos.List(queries))
+	mux.HandleFunc("DELETE /proyectos/{id}/desarrolladores/{devId}", desarrolladores_en_proyectos.Remove(queries))
+
+
+// Uso el 8090 porque el 8080 lo tengo ocupado
+	http.ListenAndServe(":8090", mux)
 }
