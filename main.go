@@ -84,6 +84,10 @@ func main() {
 	mux.HandleFunc("DELETE /proyectos/{id}/desarrolladores/{devId}", desarrolladores_en_proyectos.Remove(queries))
 
 
+	// Frontend: sirve index.html, app.js y styles.css desde ./frontend
+	// (mismo origen que la API, así el navegador no bloquea los fetch por CORS)
+	mux.Handle("/", http.FileServer(http.Dir("frontend")))
+
 // Uso el 8090 porque el 8080 lo tengo ocupado
 	http.ListenAndServe(":8090", mux)
 }

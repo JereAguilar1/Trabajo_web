@@ -14,5 +14,8 @@ FROM alpine:3.24
 RUN adduser -D -u 1000 app
 USER app
 COPY --from=builder /app/api /usr/local/bin/api
+# El servidor sirve ./frontend (ruta relativa al directorio de trabajo)
+WORKDIR /app
+COPY --from=builder /app/frontend ./frontend
 EXPOSE 8090
 CMD ["api"]
