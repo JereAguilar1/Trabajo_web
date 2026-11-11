@@ -34,8 +34,6 @@ Abrir <http://localhost:8090>. Una sola página con tres secciones (Proyectos, C
 
 Código: `views/` (componentes `.templ`; los `_templ.go` son generados), `handlers/web/` (handlers HTML), `db/` (`sqlc`).
 
-> **Nota:** desde el TP5 la API JSON ya no está enrutada en `main.go`. `requests.hurl` y `test.sh` (ambos eliminados en esta rama) y las secciones siguientes describen el TP3 y quedan como referencia histórica (rama `tp3`). Los tests de persistencia de Go se corren ahora con `make test`.
-
 ---
 
 # (Histórico) Trabajo Práctico 3: Exponiendo la Lógica como API
