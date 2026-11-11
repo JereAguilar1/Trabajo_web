@@ -2,3 +2,6 @@
 /documentos
 /db/sqlc
 .env
+/bin
+
+/views/*_templ.go

@@ -4,41 +4,33 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-	"os"
 	"net/http"
+	"os"
+	"strings"
 
 	_ "github.com/lib/pq"
 	db "tp2/db/sqlc"
-	"tp2/handlers/clientes"
-	"tp2/handlers/desarrolladores"
-	"tp2/handlers/desarrolladores_en_proyectos"
-	"tp2/handlers/proyectos"
+	"tp2/handlers/web"
 )
 
 func main() {
-	host := os.Getenv("DB_HOST")
-	if host == "" {
-		host = "127.0.0.1"
+	// La conexión se configura solo con variables de entorno (sin valores
+	// por defecto): no hay credenciales en el código. Ver .env.example.
+	cfg := map[string]string{}
+	var faltan []string
+	for _, k := range []string{"DB_HOST", "DB_PORT", "DB_USER", "DB_PASSWORD", "DB_NAME"} {
+		cfg[k] = os.Getenv(k)
+		if cfg[k] == "" {
+			faltan = append(faltan, k)
+		}
 	}
-	port := os.Getenv("DB_PORT")
-	if port == "" {
-		port = "5433"
+	if len(faltan) > 0 {
+		log.Fatalf("Faltan variables de entorno: %s (ver .env.example)", strings.Join(faltan, ", "))
 	}
-	user := os.Getenv("DB_USER")
-	if user == "" {
-		user = "postgres"
-	}
-	password := os.Getenv("DB_PASSWORD")
-	if password == "" {
-		password = "postgres"
-	}
-	dbname := os.Getenv("DB_NAME")
-	if dbname == "" {
-		dbname = "tp2_db"
-	}
+	host, port, dbname := cfg["DB_HOST"], cfg["DB_PORT"], cfg["DB_NAME"]
 
 	connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
-		host, port, user, password, dbname)
+		host, port, cfg["DB_USER"], cfg["DB_PASSWORD"], dbname)
 
 	database, err := sql.Open("postgres", connStr)
 	if err != nil {
@@ -56,38 +48,19 @@ func main() {
 
 	// SERVER
 	mux := http.NewServeMux()
-	
-	//Handlers cliente
-	mux.HandleFunc("POST /clientes", clientes.Create(queries))
-	mux.HandleFunc("GET /clientes", clientes.GetAll(queries))
-	mux.HandleFunc("GET /clientes/{id}", clientes.GetByID(queries))
-	mux.HandleFunc("PUT /clientes/{id}", clientes.Update(queries))
-	mux.HandleFunc("DELETE /clientes/{id}", clientes.Delete(queries))
 
-	//Handlers desarrolladores
-	mux.HandleFunc("POST /desarrolladores", desarrolladores.Create(queries))
-	mux.HandleFunc("GET /desarrolladores", desarrolladores.GetAll(queries))
-	mux.HandleFunc("GET /desarrolladores/{id}", desarrolladores.GetByID(queries))
-	mux.HandleFunc("PUT /desarrolladores/{id}", desarrolladores.Update(queries))
-	mux.HandleFunc("DELETE /desarrolladores/{id}", desarrolladores.Delete(queries))
+	// Vistas renderizadas en el servidor (templ). Reemplazan a la API JSON
+	// del TP3 y al frontend JS del TP4. Los formularios HTML solo soportan
+	// GET y POST.
+	// {$} hace que "/" matchee solo la raíz y no cualquier ruta desconocida.
+	mux.HandleFunc("GET /{$}", web.Index(queries))
 
-	//Handlers proyectos
-	mux.HandleFunc("POST /proyectos", proyectos.Create(queries))
-	mux.HandleFunc("GET /proyectos", proyectos.GetAll(queries))
-	mux.HandleFunc("GET /proyectos/{id}", proyectos.GetByID(queries))
-	mux.HandleFunc("PUT /proyectos/{id}", proyectos.Update(queries))
-	mux.HandleFunc("DELETE /proyectos/{id}", proyectos.Delete(queries))
+	mux.HandleFunc("POST /clientes", web.CreateCliente(queries))
 
-	//Handlers desarrolladores_en_proyectos (relación N:M, sub-recurso de proyectos)
-	mux.HandleFunc("POST /proyectos/{id}/desarrolladores", desarrolladores_en_proyectos.Assign(queries))
-	mux.HandleFunc("GET /proyectos/{id}/desarrolladores", desarrolladores_en_proyectos.List(queries))
-	mux.HandleFunc("DELETE /proyectos/{id}/desarrolladores/{devId}", desarrolladores_en_proyectos.Remove(queries))
+	mux.HandleFunc("POST /desarrolladores", web.CreateDesarrollador(queries))
 
+	mux.HandleFunc("POST /proyectos", web.CreateProyecto(queries))
 
-	// Frontend: sirve index.html, app.js y styles.css desde ./frontend
-	// (mismo origen que la API, así el navegador no bloquea los fetch por CORS)
-	mux.Handle("/", http.FileServer(http.Dir("frontend")))
-
-// Uso el 8090 porque el 8080 lo tengo ocupado
+	// Uso el 8090 porque el 8080 lo tengo ocupado
 	http.ListenAndServe(":8090", mux)
 }

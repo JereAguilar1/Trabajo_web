@@ -1,0 +1,98 @@
+package views
+
+import (
+	"fmt"
+
+	db "tp2/db/sqlc"
+)
+
+// ClienteList renderiza la tabla de clientes (o un mensaje si no hay).
+templ ClienteList(clientes []db.Cliente) {
+	if len(clientes) == 0 {
+		<p>No hay clientes cargados.</p>
+	} else {
+		<table>
+			<thead>
+				<tr>
+					<th scope="col">ID</th>
+					<th scope="col">Nombre</th>
+					<th scope="col"></th>
+				</tr>
+			</thead>
+			<tbody>
+				for _, cliente := range clientes {
+					<tr>
+						<td>{ fmt.Sprint(cliente.IDCliente) }</td>
+						<td>{ cliente.Nombre }</td>
+					</tr>
+				}
+			</tbody>
+		</table>
+	}
+}
+
+// DesarrolladorList renderiza la tabla de desarrolladores.
+templ DesarrolladorList(desarrolladores []db.Desarrolladore) {
+	if len(desarrolladores) == 0 {
+		<p>No hay desarrolladores cargados.</p>
+	} else {
+		<table>
+			<thead>
+				<tr>
+					<th scope="col">ID</th>
+					<th scope="col">Nombre</th>
+					<th scope="col">Apellido</th>
+					<th scope="col"></th>
+				</tr>
+			</thead>
+			<tbody>
+				for _, d := range desarrolladores {
+					<tr>
+						<td>{ fmt.Sprint(d.IDDesarrollador) }</td>
+						<td>{ d.Nombre }</td>
+						<td>{ d.Apellido }</td>
+					</tr>
+				}
+			</tbody>
+		</table>
+	}
+}
+
+// ProyectoList renderiza los proyectos con su cliente, sus números
+// (presupuesto y gastos).
+templ ProyectoList(rows []ProyectoRow) {
+	if len(rows) == 0 {
+		<p>No hay proyectos cargados.</p>
+	} else {
+		<table>
+			<thead>
+				<tr>
+					<th scope="col">Proyecto</th>
+					<th scope="col">Cliente</th>
+					<th scope="col">Estado</th>
+					<th scope="col">Presupuesto</th>
+					<th scope="col">Gastos</th>
+					<th scope="col">Plazo</th>
+					<th scope="col">Desarrolladores</th>
+					<th scope="col"></th>
+				</tr>
+			</thead>
+			<tbody>
+				for _, row := range rows {
+					<tr>
+						<td>
+							<strong>{ row.Proyecto.Nombre }</strong>
+							<br/>
+							<small>{ row.Proyecto.Descripcion }</small>
+						</td>
+						<td>{ row.Cliente }</td>
+						<td>{ estadoLabel(row.Proyecto.Estado) }</td>
+						<td>{ money(row.Proyecto.Presupuesto) }</td>
+						<td>{ money(row.Proyecto.Gastos) }</td>
+						<td>{ fecha(row.Proyecto.TiempoEstimado) }</td>
+					</tr>
+				}
+			</tbody>
+		</table>
+	}
+}

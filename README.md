@@ -1,4 +1,44 @@
-# Trabajo Práctico 3: Exponiendo la Lógica como API
+# Trabajo Práctico 5: Renderizado del Lado del Servidor con Templ
+
+Sistema de Gestión de Proyectos (TP1): administración de proyectos, clientes y desarrolladores para un equipo, ahora con la interfaz **renderizada en el servidor** con [`templ`](https://templ.guide/) sobre la capa de persistencia del TP2 (`sqlc` + PostgreSQL). Reemplaza al frontend JS del TP4 y a la API JSON del TP3.
+
+## Ejecutar (TP5)
+
+Requisitos: Docker + Docker Compose, Go 1.22+, [sqlc](https://sqlc.dev/) y `make`. Clonar, cambiar a la rama `tp5` y ejecutar:
+
+```bash
+git clone https://github.com/JereAguilar1/Trabajo_web.git
+cd Trabajo_web
+git checkout tp5
+make run-app
+```
+
+Si no tenés `make`, `./run-app.sh` hace exactamente lo mismo.
+
+`make run-app` (o `./run-app.sh`) hace todo en orden:
+
+1. **Tareas previas**: crea `.env` desde `.env.example` si no existe, ejecuta `sqlc generate` y `templ generate`, compila (`go build`), borra contenedores y volúmenes anteriores, levanta PostgreSQL en Docker y espera a que esté listo (el esquema se carga al iniciar).
+2. **Ejecuta la aplicación** en <http://localhost:8090>.
+3. **Tareas posteriores**: al detenerla con `Ctrl+C`, borra los contenedores y volúmenes (los datos no se conservan).
+
+**Configuración sin credenciales en el código:** la app lee `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD` y `DB_NAME` del entorno y no tiene valores por defecto: si falta alguna, termina con un error que las lista. `make run-app` las arma desde `.env` (`POSTGRES_*` y `DB_HOST_PORT`), y `docker-compose.yml` también las toma de ahí. `.env` está en `.gitignore`; el repo solo trae `.env.example`, sin contraseña. Al crear `.env`, `make run-app` genera una contraseña aleatoria.
+
+Otros targets: `make test` (tests de persistencia contra una BD temporal), `make generate`, `make build`, `make down` (borra contenedores y volúmenes a mano) y `make docker` (BD y app en contenedores). El proyecto no incluye archivos JavaScript.
+
+Abrir <http://localhost:8090>. Una sola página con tres secciones (Proyectos, Clientes, Desarrolladores): cada una muestra su lista y un formulario para **crear**. El formulario es un `<form>` clásico que hace `POST` y redirige a `/` (Post/Redirect/Get), con recarga de página completa. Si los datos no son válidos, la página muestra un aviso.
+
+| Ruta | Acción |
+|---|---|
+| `GET /` | Página completa (formularios + listas) |
+| `POST /clientes`, `/desarrolladores`, `/proyectos` | Crear y redirigir a `/` |
+
+Código: `views/` (componentes `.templ`; los `_templ.go` son generados), `handlers/web/` (handlers HTML), `db/` (`sqlc`).
+
+> **Nota:** desde el TP5 la API JSON ya no está enrutada en `main.go`. `requests.hurl` y `test.sh` (ambos eliminados en esta rama) y las secciones siguientes describen el TP3 y quedan como referencia histórica (rama `tp3`). Los tests de persistencia de Go se corren ahora con `make test`.
+
+---
+
+# (Histórico) Trabajo Práctico 3: Exponiendo la Lógica como API
 
 API REST para el Sistema de Gestión de Proyectos del TP1, construida sobre la capa de persistencia del TP2 (`sqlc` + PostgreSQL).
 

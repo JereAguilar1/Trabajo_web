@@ -1,0 +1,86 @@
+package views
+
+import (
+	"fmt"
+
+	db "tp2/db/sqlc"
+)
+
+// ClienteForm: alta de cliente. Envía un POST clásico (sin JavaScript);
+// el servidor responde con un redirect (Post/Redirect/Get).
+templ ClienteForm() {
+	<form method="post" action="/clientes">
+		<label for="cliente-nombre">Nombre</label>
+		<input type="text" id="cliente-nombre" name="nombre" required/>
+		<button type="submit">Crear cliente</button>
+	</form>
+}
+
+// DesarrolladorForm: alta de desarrollador.
+templ DesarrolladorForm() {
+	<form method="post" action="/desarrolladores">
+		<div class="grid">
+			<label>
+				Nombre
+				<input type="text" name="nombre" required/>
+			</label>
+			<label>
+				Apellido
+				<input type="text" name="apellido" required/>
+			</label>
+		</div>
+		<button type="submit">Crear desarrollador</button>
+	</form>
+}
+
+// ProyectoForm: alta de proyecto. Necesita los clientes para el <select>,
+// porque todo proyecto pertenece a un cliente (clave foránea).
+templ ProyectoForm(clientes []db.Cliente) {
+	if len(clientes) == 0 {
+		<p>Para crear un proyecto primero tenés que crear un cliente.</p>
+	} else {
+		<form method="post" action="/proyectos">
+			<div class="grid">
+				<label>
+					Nombre
+					<input type="text" name="nombre" required/>
+				</label>
+				<label>
+					Cliente
+					<select name="id_cliente" required>
+						for _, c := range clientes {
+							<option value={ fmt.Sprint(c.IDCliente) }>{ c.Nombre }</option>
+						}
+					</select>
+				</label>
+				<label>
+					Estado
+					<select name="estado" required>
+						for _, e := range Estados {
+							<option value={ e.Valor }>{ e.Etiqueta }</option>
+						}
+					</select>
+				</label>
+			</div>
+			<label>
+				Descripción
+				<input type="text" name="descripcion" required/>
+			</label>
+			<div class="grid">
+				<label>
+					Presupuesto
+					<input type="number" name="presupuesto" min="0" step="0.01" value="0" required/>
+				</label>
+				<label>
+					Gastos
+					<input type="number" name="gastos" min="0" step="0.01" value="0" required/>
+				</label>
+				<label>
+					Plazo de entrega
+					<input type="date" name="tiempo_estimado" required/>
+				</label>
+			</div>
+			<button type="submit">Crear proyecto</button>
+		</form>
+	}
+}

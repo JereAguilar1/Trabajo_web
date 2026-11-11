@@ -14,28 +14,17 @@ import (
 func getTestQueries(t *testing.T) *db.Queries {
 	t.Helper()
 
-	host := os.Getenv("DB_HOST")
-	if host == "" {
-		host = "127.0.0.1"
-	}
-	port := os.Getenv("DB_PORT")
-	if port == "" {
-		port = "5432"
-	}
-	user := os.Getenv("DB_USER")
-	if user == "" {
-		user = "postgres"
-	}
-	password := os.Getenv("DB_PASSWORD")
-	if password == "" {
-		password = "postgres"
-	}
-	dbname := os.Getenv("DB_NAME")
-	if dbname == "" {
-		dbname = "tp2_db"
+	// Sin valores por defecto: las credenciales vienen del entorno (.env).
+	cfg := map[string]string{}
+	for _, k := range []string{"DB_HOST", "DB_PORT", "DB_USER", "DB_PASSWORD", "DB_NAME"} {
+		cfg[k] = os.Getenv(k)
+		if cfg[k] == "" {
+			t.Skipf("falta la variable de entorno %s (ver .env.example); se omiten los tests de BD", k)
+		}
 	}
 
-	connStr := "host=" + host + " port=" + port + " user=" + user + " password=" + password + " dbname=" + dbname + " sslmode=disable"
+	connStr := "host=" + cfg["DB_HOST"] + " port=" + cfg["DB_PORT"] + " user=" + cfg["DB_USER"] +
+		" password=" + cfg["DB_PASSWORD"] + " dbname=" + cfg["DB_NAME"] + " sslmode=disable"
 
 	conn, err := sql.Open("postgres", connStr)
 	if err != nil {
@@ -46,7 +35,7 @@ func getTestQueries(t *testing.T) *db.Queries {
 	})
 
 	if err := conn.Ping(); err != nil {
-		t.Fatalf("Error al hacer ping a la base de datos (%s): %v", connStr, err)
+		t.Fatalf("Error al hacer ping a la base de datos (%s:%s): %v", cfg["DB_HOST"], cfg["DB_PORT"], err)
 	}
 
 	return db.New(conn)

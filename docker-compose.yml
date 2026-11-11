@@ -13,7 +13,7 @@ services:
       - ./db/schema/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
       - tp2_pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 1s
       timeout: 2s
       retries: 30
@@ -34,16 +34,6 @@ services:
       DB_NAME: ${POSTGRES_DB}
     ports:
       - "8090:8090"
-
-  hurl:
-    image: ghcr.io/orange-opensource/hurl:latest
-    container_name: tp3_hurl
-    profiles: ["test"]
-    network_mode: "host"
-    working_dir: /work
-    volumes:
-      - ./requests.hurl:/work/requests.hurl:ro
-    command: ["--test", "requests.hurl"]
 
 volumes:
   tp2_pgdata:

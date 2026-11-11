@@ -1,0 +1,26 @@
+package views
+
+// Layout es la estructura base de todas las páginas.
+// { children... } es donde se renderiza el componente hijo (el contenido).
+templ Layout(title string) {
+	<!DOCTYPE html>
+	<html lang="es">
+		<head>
+			<meta charset="UTF-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<title>{ title }</title>
+			<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2.1.1/css/pico.min.css"/>
+			<style>
+				/* botones y selects compactos dentro de las tablas */
+				td form { margin: 0; }
+				td button, td select { margin: 0; width: auto; }
+				.dev { display: flex; gap: .5rem; align-items: center; justify-content: space-between; }
+			</style>
+		</head>
+		<body>
+			<main class="container">
+				{ children... }
+			</main>
+		</body>
+	</html>
+}
