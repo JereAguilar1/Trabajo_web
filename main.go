@@ -49,17 +49,22 @@ func main() {
 	// SERVER
 	mux := http.NewServeMux()
 
-	// Vistas renderizadas en el servidor (templ). Reemplazan a la API JSON
-	// del TP3 y al frontend JS del TP4. Los formularios HTML solo soportan
-	// GET y POST.
+	// Vistas renderizadas en el servidor (templ) con HTMX para reactividad
+	// sin recarga completa.
 	// {$} hace que "/" matchee solo la raíz y no cualquier ruta desconocida.
 	mux.HandleFunc("GET /{$}", web.Index(queries))
 
 	mux.HandleFunc("POST /clientes", web.CreateCliente(queries))
+	mux.HandleFunc("DELETE /clientes/{id}", web.DeleteCliente(queries))
 
 	mux.HandleFunc("POST /desarrolladores", web.CreateDesarrollador(queries))
+	mux.HandleFunc("DELETE /desarrolladores/{id}", web.DeleteDesarrollador(queries))
 
 	mux.HandleFunc("POST /proyectos", web.CreateProyecto(queries))
+	mux.HandleFunc("DELETE /proyectos/{id}", web.DeleteProyecto(queries))
+
+	mux.HandleFunc("POST /proyectos/{id}/desarrolladores", web.AssignDesarrollador(queries))
+	mux.HandleFunc("DELETE /proyectos/{id}/desarrolladores/{devId}", web.RemoveDesarrollador(queries))
 
 	// Uso el 8090 porque el 8080 lo tengo ocupado
 	http.ListenAndServe(":8090", mux)

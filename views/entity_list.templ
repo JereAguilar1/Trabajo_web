@@ -8,59 +8,99 @@ import (
 
 // ClienteList renderiza la tabla de clientes (o un mensaje si no hay).
 templ ClienteList(clientes []db.Cliente) {
-	if len(clientes) == 0 {
-		<p>No hay clientes cargados.</p>
-	} else {
-		<table>
-			<thead>
-				<tr>
-					<th scope="col">ID</th>
-					<th scope="col">Nombre</th>
-					<th scope="col"></th>
-				</tr>
-			</thead>
-			<tbody>
-				for _, cliente := range clientes {
+	<div id="clientes-list">
+		if len(clientes) == 0 {
+			<p>No hay clientes cargados.</p>
+		} else {
+			<table>
+				<thead>
 					<tr>
-						<td>{ fmt.Sprint(cliente.IDCliente) }</td>
-						<td>{ cliente.Nombre }</td>
+						<th scope="col">Nombre</th>
+						<th scope="col"></th>
 					</tr>
-				}
-			</tbody>
-		</table>
-	}
+				</thead>
+				<tbody>
+					for _, cliente := range clientes {
+						<tr>
+							<td>{ cliente.Nombre }</td>
+							<td>
+								<button
+									type="button"
+									class="secondary outline"
+									hx-delete={ fmt.Sprintf("/clientes/%d", cliente.IDCliente) }
+									hx-target="closest tr"
+									hx-swap="outerHTML"
+									hx-confirm="¿Estás seguro de que deseas eliminar este cliente?"
+									hx-on::response-error="alert(event.detail.xhr.responseText.trim())"
+								>
+									Borrar
+								</button>
+							</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		}
+	</div>
 }
 
 // DesarrolladorList renderiza la tabla de desarrolladores.
 templ DesarrolladorList(desarrolladores []db.Desarrolladore) {
-	if len(desarrolladores) == 0 {
-		<p>No hay desarrolladores cargados.</p>
-	} else {
-		<table>
-			<thead>
-				<tr>
-					<th scope="col">ID</th>
-					<th scope="col">Nombre</th>
-					<th scope="col">Apellido</th>
-					<th scope="col"></th>
-				</tr>
-			</thead>
-			<tbody>
-				for _, d := range desarrolladores {
+	<div id="desarrolladores-list">
+		if len(desarrolladores) == 0 {
+			<p>No hay desarrolladores cargados.</p>
+		} else {
+			<table>
+				<thead>
 					<tr>
-						<td>{ fmt.Sprint(d.IDDesarrollador) }</td>
-						<td>{ d.Nombre }</td>
-						<td>{ d.Apellido }</td>
+						<th scope="col">Nombre</th>
+						<th scope="col">Apellido</th>
+						<th scope="col"></th>
 					</tr>
-				}
-			</tbody>
-		</table>
-	}
+				</thead>
+				<tbody>
+					for _, d := range desarrolladores {
+						<tr>
+							<td>{ d.Nombre }</td>
+							<td>{ d.Apellido }</td>
+							<td>
+								<button
+									type="button"
+									class="secondary outline"
+									hx-delete={ fmt.Sprintf("/desarrolladores/%d", d.IDDesarrollador) }
+									hx-target="closest tr"
+									hx-swap="outerHTML"
+									hx-confirm="¿Estás seguro de que deseas eliminar este desarrollador?"
+									hx-on::response-error="alert(event.detail.xhr.responseText.trim())"
+								>
+									Borrar
+								</button>
+							</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		}
+	</div>
 }
 
 // ProyectoList renderiza los proyectos con su cliente, sus números
-// (presupuesto y gastos).
+// (presupuesto y gastos) y sus desarrolladores asignados.
 templ ProyectoList(rows []ProyectoRow) {
+	<div id="proyectos-list">
+		@proyectoListTable(rows)
+	</div>
+}
+
+// ProyectoListOOB actualiza la lista de proyectos fuera de banda (OOB)
+// cuando cambian los desarrolladores disponibles o asignados.
+templ ProyectoListOOB(rows []ProyectoRow) {
+	<div id="proyectos-list" hx-swap-oob="true">
+		@proyectoListTable(rows)
+	</div>
+}
+
+templ proyectoListTable(rows []ProyectoRow) {
 	if len(rows) == 0 {
 		<p>No hay proyectos cargados.</p>
 	} else {
@@ -90,6 +130,58 @@ templ ProyectoList(rows []ProyectoRow) {
 						<td>{ money(row.Proyecto.Presupuesto) }</td>
 						<td>{ money(row.Proyecto.Gastos) }</td>
 						<td>{ fecha(row.Proyecto.TiempoEstimado) }</td>
+						<td>
+							<details>
+								<summary>Desarrolladores ({ fmt.Sprint(len(row.Desarrolladores)) })</summary>
+								if len(row.Desarrolladores) == 0 {
+									<small>Sin desarrolladores asignados</small>
+								} else {
+									for _, dev := range row.Desarrolladores {
+										<div>
+											<span>{ dev.Nombre } { dev.Apellido }</span>
+											<button
+												type="button"
+												class="secondary outline"
+												hx-delete={ fmt.Sprintf("/proyectos/%d/desarrolladores/%d", row.Proyecto.ID, dev.IDDesarrollador) }
+												hx-target="#proyectos-list"
+												hx-swap="outerHTML"
+												hx-confirm={ fmt.Sprintf("¿Quitar a %s %s del proyecto?", dev.Nombre, dev.Apellido) }
+												hx-on::response-error="alert(event.detail.xhr.responseText.trim())"
+											>
+												Quitar
+											</button>
+										</div>
+									}
+								}
+								if len(row.Disponibles) > 0 {
+									<form
+										hx-post={ fmt.Sprintf("/proyectos/%d/desarrolladores", row.Proyecto.ID) }
+										hx-target="#proyectos-list"
+										hx-swap="outerHTML"
+									>
+										<select name="id_desarrollador" required>
+											for _, d := range row.Disponibles {
+												<option value={ fmt.Sprint(d.IDDesarrollador) }>{ d.Nombre } { d.Apellido }</option>
+											}
+										</select>
+										<button type="submit">Asignar</button>
+									</form>
+								}
+							</details>
+						</td>
+						<td>
+							<button
+								type="button"
+								class="secondary outline"
+								hx-delete={ fmt.Sprintf("/proyectos/%d", row.Proyecto.ID) }
+								hx-target="closest tr"
+								hx-swap="outerHTML"
+								hx-confirm="¿Estás seguro de que deseas eliminar este proyecto?"
+								hx-on::response-error="alert(event.detail.xhr.responseText.trim())"
+							>
+								Borrar
+							</button>
+						</td>
 					</tr>
 				}
 			</tbody>

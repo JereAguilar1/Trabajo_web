@@ -34,7 +34,7 @@ func estadoValido(estado string) bool {
 func CreateProyecto(q *db.Queries) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := r.ParseForm(); err != nil {
-			redirectError(w, r, "invalido")
+			http.Error(w, "Datos inválidos", http.StatusBadRequest)
 			return
 		}
 
@@ -48,7 +48,7 @@ func CreateProyecto(q *db.Queries) http.HandlerFunc {
 
 		if nombre == "" || descripcion == "" || !estadoValido(estado) ||
 			!okPresupuesto || !okGastos || errPlazo != nil || errCliente != nil {
-			redirectError(w, r, "invalido")
+			http.Error(w, "Datos inválidos", http.StatusBadRequest)
 			return
 		}
 
@@ -61,13 +61,130 @@ func CreateProyecto(q *db.Queries) http.HandlerFunc {
 			TiempoEstimado: plazo,
 			IDCliente:      int32(idCliente),
 		})
-		switch {
-		case err == nil:
-			redirectOK(w, r)
-		case pgCode(err) == fkViolation: // el cliente no existe
-			redirectError(w, r, "no_existe")
-		default:
-			fail(w, r, err)
+		if err != nil {
+			if pgCode(err) == fkViolation {
+				http.Error(w, "El cliente no existe", http.StatusBadRequest)
+				return
+			}
+			fail500(w, err)
+			return
+		}
+
+		filas, err := cargarProyectosFilas(r.Context(), q)
+		if err != nil {
+			fail500(w, err)
+			return
+		}
+
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		if err := views.ProyectoList(filas).Render(r.Context(), w); err != nil {
+			fail500(w, err)
+		}
+	}
+}
+
+// DELETE /proyectos/{id}
+func DeleteProyecto(q *db.Queries) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		idStr := r.PathValue("id")
+		id, err := strconv.ParseInt(idStr, 10, 32)
+		if err != nil {
+			http.Error(w, "ID inválido", http.StatusBadRequest)
+			return
+		}
+
+		if err := q.DeleteProyecto(r.Context(), int32(id)); err != nil {
+			if pgCode(err) == fkViolation {
+				http.Error(w, "No se puede eliminar: el proyecto tiene desarrolladores asignados.", http.StatusConflict)
+				return
+			}
+			fail500(w, err)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+	}
+}
+
+// POST /proyectos/{id}/desarrolladores
+func AssignDesarrollador(q *db.Queries) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		idStr := r.PathValue("id")
+		idProyecto, err := strconv.ParseInt(idStr, 10, 32)
+		if err != nil {
+			http.Error(w, "ID de proyecto inválido", http.StatusBadRequest)
+			return
+		}
+
+		if err := r.ParseForm(); err != nil {
+			http.Error(w, "Formulario inválido", http.StatusBadRequest)
+			return
+		}
+
+		devIdStr := r.PostFormValue("id_desarrollador")
+		idDesarrollador, err := strconv.ParseInt(devIdStr, 10, 32)
+		if err != nil {
+			http.Error(w, "ID de desarrollador inválido", http.StatusBadRequest)
+			return
+		}
+
+		_, err = q.CreateDesarrolladorEnProyecto(r.Context(), db.CreateDesarrolladorEnProyectoParams{
+			IDDesarrollador: int32(idDesarrollador),
+			IDProyecto:      int32(idProyecto),
+		})
+		if err != nil {
+			fail500(w, err)
+			return
+		}
+
+		filas, err := cargarProyectosFilas(r.Context(), q)
+		if err != nil {
+			fail500(w, err)
+			return
+		}
+
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		if err := views.ProyectoList(filas).Render(r.Context(), w); err != nil {
+			fail500(w, err)
+		}
+	}
+}
+
+// DELETE /proyectos/{id}/desarrolladores/{devId}
+func RemoveDesarrollador(q *db.Queries) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		idStr := r.PathValue("id")
+		idProyecto, err := strconv.ParseInt(idStr, 10, 32)
+		if err != nil {
+			http.Error(w, "ID de proyecto inválido", http.StatusBadRequest)
+			return
+		}
+
+		devIdStr := r.PathValue("devId")
+		idDesarrollador, err := strconv.ParseInt(devIdStr, 10, 32)
+		if err != nil {
+			http.Error(w, "ID de desarrollador inválido", http.StatusBadRequest)
+			return
+		}
+
+		err = q.DeleteDesarrolladorEnProyecto(r.Context(), db.DeleteDesarrolladorEnProyectoParams{
+			IDDesarrollador: int32(idDesarrollador),
+			IDProyecto:      int32(idProyecto),
+		})
+		if err != nil {
+			fail500(w, err)
+			return
+		}
+
+		filas, err := cargarProyectosFilas(r.Context(), q)
+		if err != nil {
+			fail500(w, err)
+			return
+		}
+
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		if err := views.ProyectoList(filas).Render(r.Context(), w); err != nil {
+			fail500(w, err)
 		}
 	}
 }

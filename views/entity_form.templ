@@ -6,19 +6,29 @@ import (
 	db "tp2/db/sqlc"
 )
 
-// ClienteForm: alta de cliente. Envía un POST clásico (sin JavaScript);
-// el servidor responde con un redirect (Post/Redirect/Get).
+// ClienteForm: alta de cliente mediante HTMX (sin recarga de página).
 templ ClienteForm() {
-	<form method="post" action="/clientes">
+	<form
+		hx-post="/clientes"
+		hx-target="#clientes-list"
+		hx-swap="outerHTML"
+		hx-on::after-request="if(event.detail.successful) { this.reset(); this.closest('details').open = false }"
+	>
 		<label for="cliente-nombre">Nombre</label>
 		<input type="text" id="cliente-nombre" name="nombre" required/>
 		<button type="submit">Crear cliente</button>
+		<small class="htmx-indicator">Guardando...</small>
 	</form>
 }
 
-// DesarrolladorForm: alta de desarrollador.
+// DesarrolladorForm: alta de desarrollador mediante HTMX.
 templ DesarrolladorForm() {
-	<form method="post" action="/desarrolladores">
+	<form
+		hx-post="/desarrolladores"
+		hx-target="#desarrolladores-list"
+		hx-swap="outerHTML"
+		hx-on::after-request="if(event.detail.successful) { this.reset(); this.closest('details').open = false }"
+	>
 		<div class="grid">
 			<label>
 				Nombre
@@ -30,16 +40,36 @@ templ DesarrolladorForm() {
 			</label>
 		</div>
 		<button type="submit">Crear desarrollador</button>
+		<small class="htmx-indicator">Guardando...</small>
 	</form>
 }
 
 // ProyectoForm: alta de proyecto. Necesita los clientes para el <select>,
 // porque todo proyecto pertenece a un cliente (clave foránea).
 templ ProyectoForm(clientes []db.Cliente) {
+	<div id="proyecto-form-container">
+		@proyectoFormBody(clientes)
+	</div>
+}
+
+// ProyectoFormOOB actualiza el formulario de proyectos fuera de banda (OOB)
+// cuando cambia la lista de clientes.
+templ ProyectoFormOOB(clientes []db.Cliente) {
+	<div id="proyecto-form-container" hx-swap-oob="true">
+		@proyectoFormBody(clientes)
+	</div>
+}
+
+templ proyectoFormBody(clientes []db.Cliente) {
 	if len(clientes) == 0 {
 		<p>Para crear un proyecto primero tenés que crear un cliente.</p>
 	} else {
-		<form method="post" action="/proyectos">
+		<form
+			hx-post="/proyectos"
+			hx-target="#proyectos-list"
+			hx-swap="outerHTML"
+			hx-on::after-request="if(event.detail.successful) { this.reset(); this.closest('details').open = false }"
+		>
 			<div class="grid">
 				<label>
 					Nombre
@@ -81,6 +111,7 @@ templ ProyectoForm(clientes []db.Cliente) {
 				</label>
 			</div>
 			<button type="submit">Crear proyecto</button>
+			<small class="htmx-indicator">Guardando...</small>
 		</form>
 	}
 }

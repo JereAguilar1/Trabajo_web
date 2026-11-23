@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# TP5 - Renderizado del lado del servidor con templ
+# TP6 - Interfaces dinámicas con HTMX (SSR con templ)
 # Uso: ./run-app.sh     (equivale a `make run-app`)
 set -euo pipefail
 cd "$(dirname "$0")"

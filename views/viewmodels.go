@@ -7,10 +7,13 @@ import (
 	db "tp2/db/sqlc"
 )
 
-// ProyectoRow es un proyecto listo para mostrar: con el nombre de su cliente.
+// ProyectoRow es un proyecto listo para mostrar: con el nombre de su cliente
+// y la lista de desarrolladores asignados y disponibles.
 type ProyectoRow struct {
-	Proyecto db.Proyecto
-	Cliente  string
+	Proyecto        db.Proyecto
+	Cliente         string
+	Desarrolladores []db.Desarrolladore
+	Disponibles     []db.Desarrolladore
 }
 
 // PageData agrupa todo lo que necesita la página principal.
@@ -37,6 +40,6 @@ func estadoLabel(valor string) string {
 	return valor
 }
 
-func money(v float64) string { return fmt.Sprintf("%.2f", v) }
+func money(v float64) string { return fmt.Sprintf("$ %.2f", v) }
 
-func fecha(t time.Time) string { return t.Format("2006-01-02") }
+func fecha(t time.Time) string { return t.Format("02/01/2006") }

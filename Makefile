@@ -1,4 +1,4 @@
-# TP5 - Renderizado del lado del servidor con templ
+# TP6 - Interfaces Dinámicas con HTMX
 #
 #   make run-app   -> tareas previas + ejecuta la aplicación + tareas posteriores
 #

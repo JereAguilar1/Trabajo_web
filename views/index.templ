@@ -1,30 +1,36 @@
 package views
 
 // IndexPage es la página principal del Sistema de Gestión de Proyectos:
-// usa el Layout y compone las listas y los formularios de cada entidad.
+// usa el Layout y compone, para cada entidad, su lista y su formulario plegable.
 templ IndexPage(title string, data PageData) {
 	@Layout(title) {
 		<h1>{ title }</h1>
 		if data.Error != "" {
 			<article role="alert">{ data.Error }</article>
 		}
-		<section>
-			<h2>Proyectos</h2>
+		<article id="proyectos">
+			<header><h2>Proyectos</h2></header>
 			@ProyectoList(data.Proyectos)
-			<h3>Nuevo proyecto</h3>
-			@ProyectoForm(data.Clientes)
-		</section>
-		<section>
-			<h2>Clientes</h2>
+			<details>
+				<summary role="button">Nuevo proyecto</summary>
+				@ProyectoForm(data.Clientes)
+			</details>
+		</article>
+		<article id="clientes">
+			<header><h2>Clientes</h2></header>
 			@ClienteList(data.Clientes)
-			<h3>Nuevo cliente</h3>
-			@ClienteForm()
-		</section>
-		<section>
-			<h2>Desarrolladores</h2>
+			<details>
+				<summary role="button">Nuevo cliente</summary>
+				@ClienteForm()
+			</details>
+		</article>
+		<article id="desarrolladores">
+			<header><h2>Desarrolladores</h2></header>
 			@DesarrolladorList(data.Desarrolladores)
-			<h3>Nuevo desarrollador</h3>
-			@DesarrolladorForm()
-		</section>
+			<details>
+				<summary role="button">Nuevo desarrollador</summary>
+				@DesarrolladorForm()
+			</details>
+		</article>
 	}
 }
