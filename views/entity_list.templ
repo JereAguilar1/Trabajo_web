@@ -8,6 +8,12 @@ import (
 
 // ClienteList renderiza la tabla de clientes (o un mensaje si no hay).
 templ ClienteList(clientes []db.Cliente) {
+	@ClienteListEdit(clientes, 0)
+}
+
+// ClienteListEdit es ClienteList con la fila de editID en modo edición
+// (editID == 0: ninguna). El id es el de la clave primaria, que nunca es 0.
+templ ClienteListEdit(clientes []db.Cliente, editID int32) {
 	<div id="clientes-list">
 		if len(clientes) == 0 {
 			<p>No hay clientes cargados.</p>
@@ -21,22 +27,60 @@ templ ClienteList(clientes []db.Cliente) {
 				</thead>
 				<tbody>
 					for _, cliente := range clientes {
-						<tr>
-							<td>{ cliente.Nombre }</td>
-							<td>
-								<button
-									type="button"
-									class="secondary outline"
-									hx-delete={ fmt.Sprintf("/clientes/%d", cliente.IDCliente) }
-									hx-target="closest tr"
-									hx-swap="outerHTML"
-									hx-confirm="¿Estás seguro de que deseas eliminar este cliente?"
-									hx-on::response-error="alert(event.detail.xhr.responseText.trim())"
-								>
-									Borrar
-								</button>
-							</td>
-						</tr>
+						if cliente.IDCliente == editID {
+							<tr>
+								<td>
+									<input type="text" name="nombre" value={ cliente.Nombre } aria-label="Nombre" required/>
+								</td>
+								<td>
+									<button
+										type="button"
+										hx-put={ fmt.Sprintf("/clientes/%d", cliente.IDCliente) }
+										hx-include="closest tr"
+										hx-target="#clientes-list"
+										hx-swap="outerHTML"
+										hx-on::response-error="alert(event.detail.xhr.responseText.trim())"
+									>
+										Guardar
+									</button>
+									<button
+										type="button"
+										class="secondary"
+										hx-get="/clientes"
+										hx-target="#clientes-list"
+										hx-swap="outerHTML"
+									>
+										Cancelar
+									</button>
+								</td>
+							</tr>
+						} else {
+							<tr>
+								<td>{ cliente.Nombre }</td>
+								<td>
+									<button
+										type="button"
+										class="outline"
+										hx-get={ fmt.Sprintf("/clientes?edit=%d", cliente.IDCliente) }
+										hx-target="#clientes-list"
+										hx-swap="outerHTML"
+									>
+										Editar
+									</button>
+									<button
+										type="button"
+										class="secondary outline"
+										hx-delete={ fmt.Sprintf("/clientes/%d", cliente.IDCliente) }
+										hx-target="closest tr"
+										hx-swap="outerHTML"
+										hx-confirm="¿Estás seguro de que deseas eliminar este cliente?"
+										hx-on::response-error="alert(event.detail.xhr.responseText.trim())"
+									>
+										Borrar
+									</button>
+								</td>
+							</tr>
+						}
 					}
 				</tbody>
 			</table>
@@ -46,6 +90,11 @@ templ ClienteList(clientes []db.Cliente) {
 
 // DesarrolladorList renderiza la tabla de desarrolladores.
 templ DesarrolladorList(desarrolladores []db.Desarrolladore) {
+	@DesarrolladorListEdit(desarrolladores, 0)
+}
+
+// DesarrolladorListEdit es DesarrolladorList con la fila de editID en edición.
+templ DesarrolladorListEdit(desarrolladores []db.Desarrolladore, editID int32) {
 	<div id="desarrolladores-list">
 		if len(desarrolladores) == 0 {
 			<p>No hay desarrolladores cargados.</p>
@@ -60,23 +109,64 @@ templ DesarrolladorList(desarrolladores []db.Desarrolladore) {
 				</thead>
 				<tbody>
 					for _, d := range desarrolladores {
-						<tr>
-							<td>{ d.Nombre }</td>
-							<td>{ d.Apellido }</td>
-							<td>
-								<button
-									type="button"
-									class="secondary outline"
-									hx-delete={ fmt.Sprintf("/desarrolladores/%d", d.IDDesarrollador) }
-									hx-target="closest tr"
-									hx-swap="outerHTML"
-									hx-confirm="¿Estás seguro de que deseas eliminar este desarrollador?"
-									hx-on::response-error="alert(event.detail.xhr.responseText.trim())"
-								>
-									Borrar
-								</button>
-							</td>
-						</tr>
+						if d.IDDesarrollador == editID {
+							<tr>
+								<td>
+									<input type="text" name="nombre" value={ d.Nombre } aria-label="Nombre" required/>
+								</td>
+								<td>
+									<input type="text" name="apellido" value={ d.Apellido } aria-label="Apellido" required/>
+								</td>
+								<td>
+									<button
+										type="button"
+										hx-put={ fmt.Sprintf("/desarrolladores/%d", d.IDDesarrollador) }
+										hx-include="closest tr"
+										hx-target="#desarrolladores-list"
+										hx-swap="outerHTML"
+										hx-on::response-error="alert(event.detail.xhr.responseText.trim())"
+									>
+										Guardar
+									</button>
+									<button
+										type="button"
+										class="secondary"
+										hx-get="/desarrolladores"
+										hx-target="#desarrolladores-list"
+										hx-swap="outerHTML"
+									>
+										Cancelar
+									</button>
+								</td>
+							</tr>
+						} else {
+							<tr>
+								<td>{ d.Nombre }</td>
+								<td>{ d.Apellido }</td>
+								<td>
+									<button
+										type="button"
+										class="outline"
+										hx-get={ fmt.Sprintf("/desarrolladores?edit=%d", d.IDDesarrollador) }
+										hx-target="#desarrolladores-list"
+										hx-swap="outerHTML"
+									>
+										Editar
+									</button>
+									<button
+										type="button"
+										class="secondary outline"
+										hx-delete={ fmt.Sprintf("/desarrolladores/%d", d.IDDesarrollador) }
+										hx-target="closest tr"
+										hx-swap="outerHTML"
+										hx-confirm="¿Estás seguro de que deseas eliminar este desarrollador?"
+										hx-on::response-error="alert(event.detail.xhr.responseText.trim())"
+									>
+										Borrar
+									</button>
+								</td>
+							</tr>
+						}
 					}
 				</tbody>
 			</table>
@@ -119,6 +209,9 @@ templ proyectoListTable(rows []ProyectoRow) {
 			</thead>
 			<tbody>
 				for _, row := range rows {
+					if row.Editando {
+						@proyectoEditRow(row)
+					} else {
 					<tr>
 						<td>
 							<strong>{ row.Proyecto.Nombre }</strong>
@@ -172,6 +265,15 @@ templ proyectoListTable(rows []ProyectoRow) {
 						<td>
 							<button
 								type="button"
+								class="outline"
+								hx-get={ fmt.Sprintf("/proyectos?edit=%d", row.Proyecto.ID) }
+								hx-target="#proyectos-list"
+								hx-swap="outerHTML"
+							>
+								Editar
+							</button>
+							<button
+								type="button"
 								class="secondary outline"
 								hx-delete={ fmt.Sprintf("/proyectos/%d", row.Proyecto.ID) }
 								hx-target="closest tr"
@@ -183,8 +285,77 @@ templ proyectoListTable(rows []ProyectoRow) {
 							</button>
 						</td>
 					</tr>
+					}
 				}
 			</tbody>
 		</table>
 	}
+}
+
+// proyectoEditRow es la fila del proyecto en modo edición: un formulario que
+// ocupa todas las columnas (8). Cancelar vuelve a pedir la lista sin edición.
+templ proyectoEditRow(row ProyectoRow) {
+	<tr>
+		<td colspan="8">
+			<form
+				hx-put={ fmt.Sprintf("/proyectos/%d", row.Proyecto.ID) }
+				hx-target="#proyectos-list"
+				hx-swap="outerHTML"
+				hx-on::response-error="alert(event.detail.xhr.responseText.trim())"
+			>
+				<div class="grid">
+					<label>
+						Nombre
+						<input type="text" name="nombre" value={ row.Proyecto.Nombre } required/>
+					</label>
+					<label>
+						Cliente
+						<select name="id_cliente" required>
+							for _, c := range row.Clientes {
+								<option value={ fmt.Sprint(c.IDCliente) } selected?={ c.IDCliente == row.Proyecto.IDCliente }>{ c.Nombre }</option>
+							}
+						</select>
+					</label>
+					<label>
+						Estado
+						<select name="estado" required>
+							for _, e := range Estados {
+								<option value={ e.Valor } selected?={ e.Valor == row.Proyecto.Estado }>{ e.Etiqueta }</option>
+							}
+						</select>
+					</label>
+				</div>
+				<label>
+					Descripción
+					<input type="text" name="descripcion" value={ row.Proyecto.Descripcion } required/>
+				</label>
+				<div class="grid">
+					<label>
+						Presupuesto
+						<input type="number" name="presupuesto" min="0" step="0.01" value={ fmt.Sprintf("%.2f", row.Proyecto.Presupuesto) } required/>
+					</label>
+					<label>
+						Gastos
+						<input type="number" name="gastos" min="0" step="0.01" value={ fmt.Sprintf("%.2f", row.Proyecto.Gastos) } required/>
+					</label>
+					<label>
+						Plazo de entrega
+						<input type="date" name="tiempo_estimado" value={ row.Proyecto.TiempoEstimado.Format("2006-01-02") } required/>
+					</label>
+				</div>
+				<div class="grid">
+					<button type="submit">Guardar</button>
+					<button
+						type="button"
+						class="secondary"
+						hx-get="/proyectos"
+						hx-target="#proyectos-list"
+						hx-swap="outerHTML"
+					>
+						Cancelar
+					</button>
+				</div>
+			</form>
+		</td>
+	</tr>
 }

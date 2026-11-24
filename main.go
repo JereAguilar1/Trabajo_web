@@ -56,12 +56,18 @@ func main() {
 
 	mux.HandleFunc("POST /clientes", web.CreateCliente(queries))
 	mux.HandleFunc("DELETE /clientes/{id}", web.DeleteCliente(queries))
+	mux.HandleFunc("GET /clientes", web.ListClientes(queries))
+	mux.HandleFunc("PUT /clientes/{id}", web.UpdateCliente(queries))
 
 	mux.HandleFunc("POST /desarrolladores", web.CreateDesarrollador(queries))
 	mux.HandleFunc("DELETE /desarrolladores/{id}", web.DeleteDesarrollador(queries))
+	mux.HandleFunc("GET /desarrolladores", web.ListDesarrolladores(queries))
+	mux.HandleFunc("PUT /desarrolladores/{id}", web.UpdateDesarrollador(queries))
 
 	mux.HandleFunc("POST /proyectos", web.CreateProyecto(queries))
 	mux.HandleFunc("DELETE /proyectos/{id}", web.DeleteProyecto(queries))
+	mux.HandleFunc("GET /proyectos", web.ListProyectos(queries))
+	mux.HandleFunc("PUT /proyectos/{id}", web.UpdateProyecto(queries))
 
 	mux.HandleFunc("POST /proyectos/{id}/desarrolladores", web.AssignDesarrollador(queries))
 	mux.HandleFunc("DELETE /proyectos/{id}/desarrolladores/{devId}", web.RemoveDesarrollador(queries))

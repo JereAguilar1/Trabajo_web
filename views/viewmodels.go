@@ -14,6 +14,8 @@ type ProyectoRow struct {
 	Cliente         string
 	Desarrolladores []db.Desarrolladore
 	Disponibles     []db.Desarrolladore
+	Editando        bool         // la fila se muestra como formulario de edición
+	Clientes        []db.Cliente // opciones del <select>; solo se carga si Editando
 }
 
 // PageData agrupa todo lo que necesita la página principal.

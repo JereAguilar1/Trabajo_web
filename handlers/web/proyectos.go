@@ -1,6 +1,8 @@
 package web
 
 import (
+	"database/sql"
+	"errors"
 	"math"
 	"net/http"
 	"strconv"
@@ -182,6 +184,103 @@ func RemoveDesarrollador(q *db.Queries) http.HandlerFunc {
 			return
 		}
 
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		if err := views.ProyectoList(filas).Render(r.Context(), w); err != nil {
+			fail500(w, err)
+		}
+	}
+}
+
+// GET /proyectos[?edit=ID]
+// Devuelve la tabla de proyectos; con ?edit=ID esa fila sale como formulario
+// (para lo cual hacen falta los clientes del <select>).
+func ListProyectos(q *db.Queries) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		filas, err := cargarProyectosFilas(r.Context(), q)
+		if err != nil {
+			fail500(w, err)
+			return
+		}
+		if editID := editParam(r); editID != 0 {
+			clientes, err := q.ListClientes(r.Context())
+			if err != nil {
+				fail500(w, err)
+				return
+			}
+			for i := range filas {
+				if filas[i].Proyecto.ID == editID {
+					filas[i].Editando = true
+					filas[i].Clientes = clientes
+				}
+			}
+		}
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		if err := views.ProyectoList(filas).Render(r.Context(), w); err != nil {
+			fail500(w, err)
+		}
+	}
+}
+
+// PUT /proyectos/{id}
+// Reemplaza todos los campos editables del proyecto (misma validación que el alta).
+func UpdateProyecto(q *db.Queries) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id, err := strconv.ParseInt(r.PathValue("id"), 10, 32)
+		if err != nil {
+			http.Error(w, "ID inválido", http.StatusBadRequest)
+			return
+		}
+		if err := r.ParseForm(); err != nil {
+			http.Error(w, "Datos inválidos", http.StatusBadRequest)
+			return
+		}
+
+		nombre := strings.TrimSpace(r.PostFormValue("nombre"))
+		descripcion := strings.TrimSpace(r.PostFormValue("descripcion"))
+		estado := r.PostFormValue("estado")
+		presupuesto, okPresupuesto := parseMonto(r.PostFormValue("presupuesto"))
+		gastos, okGastos := parseMonto(r.PostFormValue("gastos"))
+		plazo, errPlazo := time.Parse("2006-01-02", r.PostFormValue("tiempo_estimado"))
+		idCliente, errCliente := strconv.ParseInt(r.PostFormValue("id_cliente"), 10, 32)
+
+		if nombre == "" || descripcion == "" || !estadoValido(estado) ||
+			!okPresupuesto || !okGastos || errPlazo != nil || errCliente != nil {
+			http.Error(w, "Datos inválidos", http.StatusBadRequest)
+			return
+		}
+
+		if _, err := q.GetProyecto(r.Context(), int32(id)); err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				http.Error(w, "El proyecto no existe", http.StatusNotFound)
+				return
+			}
+			fail500(w, err)
+			return
+		}
+		err = q.UpdateProyecto(r.Context(), db.UpdateProyectoParams{
+			ID:             int32(id),
+			Nombre:         nombre,
+			Descripcion:    descripcion,
+			Estado:         estado,
+			Gastos:         gastos,
+			Presupuesto:    presupuesto,
+			TiempoEstimado: plazo,
+			IDCliente:      int32(idCliente),
+		})
+		if err != nil {
+			if pgCode(err) == fkViolation {
+				http.Error(w, "El cliente no existe", http.StatusBadRequest)
+				return
+			}
+			fail500(w, err)
+			return
+		}
+
+		filas, err := cargarProyectosFilas(r.Context(), q)
+		if err != nil {
+			fail500(w, err)
+			return
+		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		if err := views.ProyectoList(filas).Render(r.Context(), w); err != nil {
 			fail500(w, err)
